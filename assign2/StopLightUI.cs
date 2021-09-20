@@ -33,5 +33,16 @@ public class StopLightUI : Form
 		pause_button.Text = "Pause";
 		exit_button.Text = "Exit";
 
+		title.Font = new Font("Arial",26,FontStyle.Regular);
+		start_button.Font = new Font("Arial",26,FontStyle.Regular);
+		fast_button.Font = new Font("Arial",26,FontStyle.Regular);
+		slow_button.Font = new Font("Arial",26,FontStyle.Regular);
+		pause_button.Font = new Font("Arial",26,FontStyle.Regular);
+		exit_button.Font = new Font("Arial",26,FontStyle.Regular);
+
+		header_panel.Location = new Point(0,0);
+		display_form.Location = new Point(0,100);
+		control_panel.Location = new Point (0,800);
+
 	}
 }
