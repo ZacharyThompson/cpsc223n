@@ -20,11 +20,34 @@ public class StopLightUI : Form
 	private Size max_win_size = new Size(300,900);
 	private Size min_win_size = new Size(300,900);
 
+	private enum ProgramState
+	{
+		Red,
+		Yellow,
+		Green,
+		Off
+	}
+
+	private bool paused;
+	private bool fast;
+
+	static private ProgramState state;
+
+	private System.Timers.Timer timer;
+	private int elapsed_time;
+
 	public StopLightUI()
 	{
+		state = ProgramState.Off;
+		paused = false;
+
+		timer = new System.Timers.Timer();
+		timer.Enabled = false;
+		timer.Elapsed += new ElapsedEventHandler(ChangeColor);
+		elapsed_time = 0;
+
 		MaximumSize = max_win_size;
 		MinimumSize = min_win_size;
-
 
 		Text = "Stop Light";
 		title.Text = "Stop Light Simulator by Zachary Thompson";
@@ -47,6 +70,7 @@ public class StopLightUI : Form
 		header_panel.BackColor = Color.Yellow;
 		display_panel.BackColor = Color.LightGray;
 		control_panel.BackColor = Color.LightGreen;
+		title.ForeColor = Color.Black;
 
 		title.Font = new Font("Arial",13,FontStyle.Regular);
 		start_button.Font = new Font("Arial",13,FontStyle.Regular);
@@ -76,22 +100,87 @@ public class StopLightUI : Form
 		control_panel.Controls.Add(pause_button);
 		control_panel.Controls.Add(exit_button);
 
+		start_button.Click += new EventHandler(Start);
+		fast_button.Click += new EventHandler(Fast);
+		slow_button.Click += new EventHandler(Slow);
+		pause_button.Click += new EventHandler(Pause);
+		exit_button.Click += new EventHandler(Exit);
+
 		CenterToScreen();
 
 		display_panel.Invalidate();
 	}
 
+	protected void Start(Object sender, EventArgs events)
+	{
+		timer.Interval = 2000; // Timer set to 2 seconds
+		timer.Enabled = true;
+		state = ProgramState.Red;
+	}
+
+	protected void Fast(Object sender, EventArgs events)
+	{
+		fast = true;
+	}
+
+	protected void Slow(Object sender, EventArgs events)
+	{
+		fast = false;
+	}
+
+	protected void Pause(Object sender, EventArgs events)
+	{
+		if (!paused)
+		{
+			timer.Stop();
+		}
+		paused = true;
+	}
+
+	protected void Exit(Object sender, EventArgs events)
+	{
+		Close();
+	}
+
+	protected void ChangeColor(Object sender, ElapsedEventArgs events)
+	{
+		if (fast)
+		{
+			elapsed_time += 1;
+			timer.Interval = 1000;
+		}
+		else
+		{
+			elapsed_time += 2;
+			timer.Interval = 2000;
+		}
+
+		if (elapsed_time < 4)
+		{
+		}
+		else if (elapsed_time >= 5)
+		{
+		}
+		else 
+		{
+		}
+
+	}
+
 	public class Graphic_Panel : Panel
 	{
-		private static Pen RedPen    = new Pen(Color.Red, 2);
-		private static Pen YellowPen = new Pen(Color.Yellow, 2);
-		private static Pen GreenPen  = new Pen(Color.Green, 2);
+		private static Brush RedBrush    = new SolidBrush(Color.Red);
+		private static Brush YellowBrush = new SolidBrush(Color.Yellow);
+		private static Brush GreenBrush  = new SolidBrush(Color.Green);
+		private static Brush GrayBrush  = new SolidBrush(Color.Gray);
 
 		protected override void OnPaint(PaintEventArgs e)
 		{
 			Graphics graph = e.Graphics;
 
-			graph.DrawEllipse(RedPen,50,20,300,200);
+			graph.FillEllipse(state == ProgramState.Red ? RedBrush : GrayBrush,50,20,200,200);
+			graph.FillEllipse(state == ProgramState.Yellow ? YellowBrush : GrayBrush,50,240,200,200);
+			graph.FillEllipse(state == ProgramState.Green ? GreenBrush : GrayBrush,50,460,200,200);
 			base.OnPaint(e);
 		}
 	}
