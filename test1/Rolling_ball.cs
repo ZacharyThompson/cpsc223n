@@ -229,6 +229,8 @@ public class TravelingBallUI : Form
 			start_button.Text = "Resume";
 			paused = true;
 		}
+
+		display_panel.Invalidate();
 	}
 
 	protected void Reset(Object sender, EventArgs events)
