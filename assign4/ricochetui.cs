@@ -25,16 +25,16 @@ public class RicochetUI : Form
 	private Button reset_button = new Button();
 	private Button exit_button = new Button();
 
-	private Size max_win_size = new Size(700,900);
-	private Size min_win_size = new Size(700,900);
+	private Size max_win_size = new Size(800,900);
+	private Size min_win_size = new Size(800,900);
 
 	static private bool paused;
 
-	private const double ball_radius = 5;
+	static private double ball_radius = 20;
 	private double ball_speed;
 	private double ball_direction;
-	private double ball_pos_x;
-	private double ball_pos_y;
+	static private double ball_pos_x;
+	static private double ball_pos_y;
 
 	private System.Timers.Timer animation_timer = new System.Timers.Timer();
 	
@@ -58,9 +58,9 @@ public class RicochetUI : Form
 
 		// Sizes
 		Size = MinimumSize;
-		header_panel.Size = new Size(700,100);
-		display_panel.Size = new Size(700,600);
-		control_panel.Size = new Size(700,200);
+		header_panel.Size = new Size(800,100);
+		display_panel.Size = new Size(800,600);
+		control_panel.Size = new Size(800,200);
 		start_button.Size = new Size(75,50);
 		reset_button.Size = new Size(75,50);
 		exit_button.Size = new Size(75,50);
@@ -117,8 +117,8 @@ public class RicochetUI : Form
 		control_panel.Location = new Point(0,700);
 		title.Location = new Point(250,35);
 		start_button.Location = new Point(50,100);
-		reset_button.Location = new Point(150,100);
-		exit_button.Location = new Point(250,100);
+		reset_button.Location = new Point(50,30);
+		exit_button.Location = new Point(710,100);
 
 		// Enter key presses start
 		AcceptButton = start_button;
@@ -138,27 +138,93 @@ public class RicochetUI : Form
 		exit_button.Click += new EventHandler(Exit);
 
 		// Setup Timer
+		animation_timer.Enabled = false;
+		animation_timer.Interval = (int)Math.Round(1000.0/30.0); // 34 approx. equals 30 hz
+		animation_timer.Elapsed += new ElapsedEventHandler(MoveBall);
 
 		// Initial Values
 		paused = true;
-		ball_speed = null;
-		ball_direction = null;
-		ball_pos_x = 0;
-		ball_pos_y = 0;
+		ball_speed = 5.0;
+		ball_direction = 150.0;
+		ball_pos_x = 400;
+		ball_pos_y = 300;
+
+		display_panel.Invalidate();
+	}
+
+	private double DegToRad(double angle)
+	{
+		return angle * (Math.PI/180);
+	}
+
+	protected void MoveBall(Object sender, ElapsedEventArgs events)
+	{
+		ball_pos_x = ball_pos_x + ball_speed * Math.Cos(DegToRad(ball_direction));
+		ball_pos_y = ball_pos_y + ball_speed * Math.Sin(DegToRad(ball_direction));
+		DetectCollision();
+		Console.WriteLine($"Direction: {ball_direction}");
+		display_panel.Invalidate();
+	}
+
+
+	private void DetectCollision()
+	{
+		// Left
+		if (ball_pos_x < 0)
+		{
+			ball_direction = 180-ball_direction;
+			ball_pos_x = 0;
+		}
+		// Right
+		if (ball_pos_x + 2*ball_radius > 800)
+		{
+			ball_direction = 180-ball_direction;
+			ball_pos_x = 800 - 2*ball_radius;
+		}
+		// Up
+		if (ball_pos_y < 0)
+		{
+			ball_direction = -ball_direction;
+			ball_pos_y = 0;
+		}
+		// Down
+		if (ball_pos_y + 2*ball_radius > 600)
+		{
+			ball_direction = -ball_direction;
+			ball_pos_y = 600 - 2*ball_radius;
+		}
 	}
 
 	protected void Start(Object sender, EventArgs events)
 	{
+		if (paused)
+		{
+			animation_timer.Enabled = true;
+			start_button.Text = "Pause";
+			paused = false;
+		}
+		else
+		{
+			animation_timer.Enabled = false;
+			start_button.Text = "Unpause";
+			paused = true;
+		}
 	}
 
 	protected void Reset(Object sender, EventArgs events)
 	{
 		// Initial Values
 		paused = true;
-		ball_speed = null;
-		ball_direction = null;
-		ball_pos_x = 0;
-		ball_pos_y = 0;
+		ball_speed = 0.0;
+		ball_direction = 0.0;
+		ball_pos_x = 400;
+		ball_pos_y = 300;
+
+		// Reset Timer
+		animation_timer.Enabled = false;
+
+		// Reset Start Button
+		start_button.Text = "Start";
 	}
 
 	protected void Exit(Object sender, EventArgs events)
@@ -176,7 +242,11 @@ public class RicochetUI : Form
 
 		protected override void OnPaint(PaintEventArgs e)
 		{
+			int new_ball_pos_x = (int)Math.Round(ball_pos_x);
+			int new_ball_pos_y = (int)Math.Round(ball_pos_y);
+			int new_ball_radius = (int)Math.Round(ball_radius);
 			Graphics graph = e.Graphics;
+			graph.FillEllipse(RedBrush,new_ball_pos_x,new_ball_pos_y,2*new_ball_radius,2*new_ball_radius);
 			base.OnPaint(e);
 		}
 	}
