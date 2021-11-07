@@ -55,6 +55,8 @@ public class RicochetUI : Form
 		y_label.Text = "Y = ";
 		direction_label.Text = "Enter Direction (degrees)";
 		speed_label.Text = "Enter Speed (pixel/second)";
+		speed_input.Text = "";
+		direction_input.Text = "";
 
 		// Sizes
 		Size = MinimumSize;
@@ -193,21 +195,40 @@ public class RicochetUI : Form
 			ball_direction = -ball_direction;
 			ball_pos_y = 600 - 2*ball_radius;
 		}
+
+
+		// Update direction to be between 0-360
+		if (ball_direction < 0)
+		{
+			ball_direction += 360;
+		}
+		else if (ball_direction > 360)
+		{
+			ball_direction -= 360;
+		}
+	}
+
+	private bool CheckInput()
+	{
+		return true;
 	}
 
 	protected void Start(Object sender, EventArgs events)
 	{
-		if (paused)
+		if (CheckInput())
 		{
-			animation_timer.Enabled = true;
-			start_button.Text = "Pause";
-			paused = false;
-		}
-		else
-		{
-			animation_timer.Enabled = false;
-			start_button.Text = "Unpause";
-			paused = true;
+			if (paused)
+			{
+				animation_timer.Enabled = true;
+				start_button.Text = "Pause";
+				paused = false;
+			}
+			else
+			{
+				animation_timer.Enabled = false;
+				start_button.Text = "Unpause";
+				paused = true;
+			}
 		}
 	}
 
