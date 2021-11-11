@@ -1,3 +1,8 @@
+// Zachary Thompson
+// Midterm #2
+// November 8, 2021
+// CPSC 223N-1
+
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -15,24 +20,28 @@ public class RicochetUI : Form
 	private Label y_label = new Label();
 	private Label direction_label = new Label();
 	private Label speed_label = new Label();
+	private Label current_speed_label = new Label();
 
 	private TextBox x_output = new TextBox();
 	private TextBox y_output = new TextBox();
 	private TextBox direction_input = new TextBox();
 	private TextBox speed_input = new TextBox();
+	private TextBox current_speed_output = new TextBox();
 
 	private Button start_button = new Button();
 	private Button reset_button = new Button();
 	private Button exit_button = new Button();
+	private Button plus_button = new Button();
+	private Button minus_button = new Button();
 
 	private Size max_win_size = new Size(800,900);
 	private Size min_win_size = new Size(800,900);
 
 	static private bool paused;
 
-	static private double ball_radius = 20;
-	private double ball_speed;
-	private double ball_direction;
+	static private double ball_radius = 10;
+	private double ball_speed; // pix/tick
+	private double ball_direction; // degrees
 	static private double ball_pos_x;
 	static private double ball_pos_y;
 	static private bool ball_visible;
@@ -57,8 +66,12 @@ public class RicochetUI : Form
 		y_label.Text = "Y =";
 		direction_label.Text = "Enter Direction (degrees)";
 		speed_label.Text = "Enter Speed (pixel/second)";
-		speed_input.Text = "";
+		speed_input.Text = "80";
 		direction_input.Text = "";
+		current_speed_output.Text = "80";
+		current_speed_label.Text = "Current Speed";
+		plus_button.Text = "+";
+		minus_button.Text = "-";
 
 		// Sizes
 		Size = MinimumSize;
@@ -72,11 +85,15 @@ public class RicochetUI : Form
 		x_label.Size = new Size(30,25);
 		y_label.Size = new Size(30,25);
 		direction_label.Size = new Size(200,35);
-		speed_label.Size = new Size(225,35);
+		speed_label.Size = new Size(225,25);
 		x_output.Size = new Size(50,50);
 		y_output.Size = new Size(50,50);
 		direction_input.Size = new Size(50,50);
 		speed_input.Size = new Size(50,50);
+		current_speed_output.Size = new Size(125,75);
+		current_speed_label.Size = new Size(150,50);
+		plus_button.Size = new Size(30,30);
+		minus_button.Size = new Size(30,30);
 
 		// Colors
 		header_panel.BackColor = Color.LightBlue;
@@ -100,6 +117,14 @@ public class RicochetUI : Form
 		y_output.BackColor = Color.White;
 		direction_input.BackColor = Color.White;
 		speed_input.BackColor = Color.White;
+		current_speed_output.BackColor = Color.Purple;
+		current_speed_output.ForeColor = Color.Black;
+		current_speed_label.ForeColor = Color.Black;
+		plus_button.BackColor = Color.Purple;
+		plus_button.ForeColor = Color.Black;
+		minus_button.BackColor = Color.Purple;
+		minus_button.ForeColor = Color.Black;
+		
 
 		// Fonts
 		title.Font = new Font("Arial",18,FontStyle.Regular);
@@ -114,12 +139,16 @@ public class RicochetUI : Form
 		y_output.Font = new Font("Arial",13,FontStyle.Regular);
 		direction_input.Font = new Font("Arial",13,FontStyle.Regular);
 		speed_input.Font = new Font("Arial",13,FontStyle.Regular);
+		current_speed_output.Font = new Font("Arial",16,FontStyle.Regular);
+		current_speed_label.Font = new Font("Arial",13,FontStyle.Regular);
+		plus_button.Font = new Font("Arial",13,FontStyle.Regular);
+		minus_button.Font = new Font("Arial",13,FontStyle.Regular);
 
 		// Locations
 		header_panel.Location = new Point(0,0);
 		display_panel.Location = new Point(0,100);
 		control_panel.Location = new Point(0,700);
-		title.Location = new Point(250,35);
+		title.Location = new Point(200,35);
 		start_button.Location = new Point(50,100);
 		reset_button.Location = new Point(50,30);
 		exit_button.Location = new Point(710,100);
@@ -131,6 +160,10 @@ public class RicochetUI : Form
 		x_output.Location = new Point(445,100);
 		y_label.Location = new Point(510,100);
 		y_output.Location = new Point(555,100);
+		plus_button.Location = new Point(150,50);
+		minus_button.Location = new Point(150,100);
+		current_speed_output.Location = new Point(200,100);
+		current_speed_label.Location = new Point(200,75);
 
 		// Enter key presses start
 		AcceptButton = start_button;
@@ -151,11 +184,17 @@ public class RicochetUI : Form
 		control_panel.Controls.Add(y_label);
 		control_panel.Controls.Add(x_output);
 		control_panel.Controls.Add(y_output);
+		control_panel.Controls.Add(current_speed_output);
+		control_panel.Controls.Add(current_speed_label);
+		control_panel.Controls.Add(plus_button);
+		control_panel.Controls.Add(minus_button);
 
 		// Event Handlers
 		start_button.Click += new EventHandler(Start);
 		reset_button.Click += new EventHandler(Reset);
 		exit_button.Click += new EventHandler(Exit);
+		plus_button.Click += new EventHandler(IncreaseSpeed);
+		minus_button.Click += new EventHandler(DecreaseSpeed);
 
 		// Setup Timer
 		animation_timer.Enabled = false;
@@ -164,14 +203,41 @@ public class RicochetUI : Form
 
 		// Initial Values
 		paused = true;
-		ball_speed = 0.0;
+		ball_speed = 80 * animation_timer.Interval / 1000;
 		ball_direction = 0.0;
 		ball_pos_x = 400;
 		ball_pos_y = 300;
 		ball_visible = false;
 		in_progress = false;
 
+		// For test #2 the speed input box is no longer needed
+		speed_input.Enabled = false;
+
 		display_panel.Invalidate();
+	}
+
+	protected void IncreaseSpeed(Object sender, EventArgs events)
+	{
+		if (!paused)
+		{
+			ball_speed += 10 * animation_timer.Interval / 1000;
+			// Cap speed to 360 pix/sec
+			if (ball_speed > 360 * animation_timer.Interval / 1000)
+				ball_speed = 360 * animation_timer.Interval / 1000;
+			current_speed_output.Text = Math.Round(ball_speed / animation_timer.Interval * 1000, 2).ToString();
+		}
+	}
+
+	protected void DecreaseSpeed(Object sender, EventArgs events)
+	{
+		if (!paused)
+		{
+			ball_speed -= 10 * animation_timer.Interval / 1000;
+			// Min. speed is 0 pix/sec
+			if (ball_speed < 0)
+				ball_speed = 0;
+			current_speed_output.Text = Math.Round(ball_speed / animation_timer.Interval * 1000, 2).ToString();
+		}
 	}
 
 	private double DegToRad(double angle)
@@ -184,8 +250,8 @@ public class RicochetUI : Form
 		ball_pos_x = ball_pos_x + ball_speed * Math.Cos(DegToRad(ball_direction));
 		ball_pos_y = ball_pos_y + ball_speed * Math.Sin(DegToRad(ball_direction));
 		DetectCollision();
-		x_output.Text = Math.Round(ball_pos_x).ToString();
-		y_output.Text = Math.Round(ball_pos_y).ToString();
+		x_output.Text = Math.Round(ball_pos_x + ball_radius).ToString();
+		y_output.Text = Math.Round(ball_pos_y + ball_radius).ToString();
 		display_panel.Invalidate();
 	}
 
@@ -231,7 +297,7 @@ public class RicochetUI : Form
 
 	private bool CheckInput()
 	{
-		if (speed_input.Text == "" || direction_input.Text == "")
+		if (direction_input.Text == "")
 		{
 			return false;
 		}
@@ -240,8 +306,8 @@ public class RicochetUI : Form
 		{
 			if (!in_progress)
 			{
-				// Convert from pix/sec to pix/tic
-				ball_speed = Convert.ToDouble(speed_input.Text) * animation_timer.Interval / 1000;
+				// Convert from pix/sec to pix/tick
+				/* ball_speed = Convert.ToDouble(speed_input.Text) * animation_timer.Interval / 1000; */
 				ball_direction = Convert.ToDouble(direction_input.Text);
 			}
 		}
@@ -249,6 +315,14 @@ public class RicochetUI : Form
 		{
 			return false;
 		}
+
+		/*
+		if (ball_speed < 0)
+		{
+			ball_speed = 0;
+			return false;
+		}
+		*/
 
 		return true;
 	}
@@ -271,6 +345,7 @@ public class RicochetUI : Form
 			}
 			ball_visible = true;
 			in_progress = true;
+			current_speed_output.Text = Math.Round(ball_speed / animation_timer.Interval * 1000, 2).ToString();
 		}
 	}
 
@@ -278,7 +353,7 @@ public class RicochetUI : Form
 	{
 		// Initial Values
 		paused = true;
-		ball_speed = 0.0;
+		ball_speed = 80 * animation_timer.Interval / 1000;
 		ball_direction = 0.0;
 		ball_pos_x = 400;
 		ball_pos_y = 300;
@@ -292,8 +367,9 @@ public class RicochetUI : Form
 		start_button.Text = "Start";
 		x_output.Text = "";
 		y_output.Text = "";
-		speed_input.Text = "";
+		/* speed_input.Text = ""; */
 		direction_input.Text = "";
+		current_speed_output.Text = "80";
 
 		display_panel.Invalidate();
 	}
